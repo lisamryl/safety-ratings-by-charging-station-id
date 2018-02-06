@@ -75,22 +75,12 @@ def get_crime_by_loc(locations_list, crime_list):
         Locations list (volta locations - includes id, x-coord, y-coord)
         Crime List (SF crimes - includes crime type, x-coord, y-coord, date)
     Returns:
-        Sorted list of crime counts by location id (by most safe to least safe)
         Dictionary of crime severities by location id
-        List of location details
-    Note:
-        Returning multiple datasets to reduce runtime required to loop through
-        all crime data for all locations.
     """
-    loc_crime_count = {}
     loc_crime_severity = {}
-    loc_details = []
-    # Note - looping through all locations for all crimes, but returning multiple
-    # datasets in this function to avoid doing this multiple times.
     for location in locations_list:
         loc_id, loc_x_coord, loc_y_coord = location
         # Show all results, even if no crimes are commited near the area.
-        loc_crime_count[loc_id] = 0
         loc_crime_severity[loc_id] = 0
         for crime in crime_list:
             crime_type, crime_x_coord, crime_y_coord, crime_date = crime
@@ -101,14 +91,9 @@ def get_crime_by_loc(locations_list, crime_list):
                                 (crime_x_coord, crime_y_coord)).miles
             # If distance is within max crime distance, consider crime "nearby"
             if distance <= CRIME_MAX_DISTANCE:
-                #store data in a list for each location
-                loc_details.append([loc_id, crime_type, crime_date])
-                loc_crime_count[loc_id] = loc_crime_count.get(loc_id, 0) + 1
                 loc_crime_severity[loc_id] = (loc_crime_severity.get(loc_id, 0)
                                               + crime_factor)
-
-    return [sorted(loc_crime_count.items(), key=lambda x: x[1]),
-            loc_crime_severity, loc_details]
+    return loc_crime_severity
 
 
 def convert_crimes_to_ratings(loc_crime_severity):
@@ -149,17 +134,7 @@ if __name__ == "__main__":
     volta_locs = get_volta_data()
     crime_list = get_SF_crime_data()
 
-    # Crime count provides a list of charging stations sorted by most safe to
-    # least safe (and includes how many crimes each staction has had).
-    crime_count, loc_crime_severity, loc_details = get_crime_by_loc(volta_locs,
-                                                                    crime_list)
-
-    print crime_count
-
-    # Get crimes by location id
-    sample_id = 'c0d24381-6d05-4712-b0a8-51b6ef5339e2'
-    crimes_by_loc_id = get_crime_details_by_id(sample_id, loc_details)
-    print crimes_by_loc_id
+    loc_crime_severity = get_crime_by_loc(volta_locs, crime_list)
 
     # Get safety ratings list by location (factoring in severity of crime)
     # scale of (0 (least safe) - 5 (safest))
